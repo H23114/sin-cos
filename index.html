@@ -1,0 +1,793 @@
+<title>正弦曲線變形實驗室</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=STIX+Two+Text:ital,wght@0,400;0,600;1,400;1,600&family=Noto+Sans+TC:wght@400;500;700&family=Noto+Serif+TC:wght@700&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+:root{
+  --paper:#F6F8FA; --surface:#FFFFFF; --surface-2:#EEF2F6;
+  --ink:#141E29; --ink-soft:#53616E; --ink-faint:#8695A2;
+  --rule:#D9E1E9; --grid:#E8EDF2; --grid-strong:#C6D1DC;
+  --curve:#22398A; --ref:#AAB6C2;
+  --cA:#AC2A57; --cB:#A85510; --cC:#0F6E56; --cD:#553BA3;
+  --cA-soft:#FBEAF0; --cB-soft:#FBEFE2; --cC-soft:#E4F4EF; --cD-soft:#EDE9F9;
+  --shadow:0 1px 2px rgba(20,30,41,.06), 0 6px 20px -12px rgba(20,30,41,.28);
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --paper:#0E141A; --surface:#161E27; --surface-2:#1D2731;
+    --ink:#E7EDF3; --ink-soft:#A0AEBB; --ink-faint:#6C7B89;
+    --rule:#293440; --grid:#1D2731; --grid-strong:#33404D;
+    --curve:#8FA8FF; --ref:#4C5867;
+    --cA:#FF90B0; --cB:#F0A75F; --cC:#4FD5AC; --cD:#B39BFF;
+    --cA-soft:#2C1620; --cB-soft:#2B1E10; --cC-soft:#0F2620; --cD-soft:#211A33;
+    --shadow:0 1px 2px rgba(0,0,0,.4), 0 8px 24px -14px rgba(0,0,0,.8);
+  }
+}
+:root[data-theme="dark"]{
+  --paper:#0E141A; --surface:#161E27; --surface-2:#1D2731;
+  --ink:#E7EDF3; --ink-soft:#A0AEBB; --ink-faint:#6C7B89;
+  --rule:#293440; --grid:#1D2731; --grid-strong:#33404D;
+  --curve:#8FA8FF; --ref:#4C5867;
+  --cA:#FF90B0; --cB:#F0A75F; --cC:#4FD5AC; --cD:#B39BFF;
+  --cA-soft:#2C1620; --cB-soft:#2B1E10; --cC-soft:#0F2620; --cD-soft:#211A33;
+  --shadow:0 1px 2px rgba(0,0,0,.4), 0 8px 24px -14px rgba(0,0,0,.8);
+}
+
+*{box-sizing:border-box}
+[hidden]{display:none !important}
+body{
+  background:var(--paper); color:var(--ink);
+  font-family:"Noto Sans TC","STIX Two Text",-apple-system,"Segoe UI",sans-serif;
+  font-size:15px; line-height:1.75; -webkit-font-smoothing:antialiased;
+}
+.wrap{max-width:1240px; margin:0 auto; padding:32px 22px 72px;}
+
+header{border-bottom:1px solid var(--rule); padding-bottom:22px; margin-bottom:26px;}
+.eyebrow{
+  font-size:12px; letter-spacing:.16em; text-transform:uppercase;
+  color:var(--ink-faint); font-weight:500; margin:0 0 8px;
+}
+h1{
+  font-family:"Noto Serif TC","STIX Two Text",serif; font-weight:700;
+  font-size:clamp(26px,4vw,38px); line-height:1.25; margin:0 0 10px;
+  letter-spacing:.01em; text-wrap:balance;
+}
+.lede{margin:0; max-width:62ch; color:var(--ink-soft); font-size:15.5px;}
+
+.stage{display:grid; grid-template-columns:minmax(0,1.55fr) minmax(300px,1fr); gap:22px; align-items:start;}
+@media (max-width:940px){ .stage{grid-template-columns:minmax(0,1fr);} }
+
+.panel{
+  background:var(--surface); border:1px solid var(--rule); border-radius:10px;
+  box-shadow:var(--shadow);
+}
+.left-col{display:flex; flex-direction:column; gap:18px; min-width:0;}
+.right-col{display:flex; flex-direction:column; gap:16px; min-width:0;}
+@media (min-width:941px){ .right-col{position:sticky; top:20px;} }
+
+.eq-panel{padding:18px 20px 16px;}
+.eq{
+  font-family:"STIX Two Text",serif; font-size:clamp(24px,3.4vw,32px);
+  line-height:1.35; text-align:center; margin:0; letter-spacing:.01em;
+}
+.eq i{font-style:italic;}
+.pv{
+  font-family:"IBM Plex Mono","STIX Two Text",monospace; font-variant-numeric:tabular-nums;
+  font-size:clamp(14px,1.9vw,17px); text-align:center; color:var(--ink-soft);
+  margin:8px 0 0; letter-spacing:-.01em;
+}
+.tok{
+  font-style:italic; font-weight:600; padding:0 .06em; border-radius:3px;
+  transition:background-color .18s ease;
+}
+.tok.on{ box-shadow:0 2px 0 0 currentColor; }
+.tA{color:var(--cA)} .tB{color:var(--cB)} .tC{color:var(--cC)} .tD{color:var(--cD)}
+.tok.tA.on{background:var(--cA-soft)} .tok.tB.on{background:var(--cB-soft)}
+.tok.tC.on{background:var(--cC-soft)} .tok.tD.on{background:var(--cD-soft)}
+.pv .vA{color:var(--cA)} .pv .vB{color:var(--cB)} .pv .vC{color:var(--cC)} .pv .vD{color:var(--cD)}
+
+.graph-panel{padding:10px 10px 6px; overflow:hidden;}
+#plot{display:block; width:100%; height:auto; touch-action:pan-y;}
+.plot-foot{
+  display:flex; flex-wrap:wrap; gap:6px 16px; align-items:center;
+  padding:8px 12px 10px; border-top:1px solid var(--rule); margin:6px 6px 0;
+  font-size:12.5px; color:var(--ink-soft);
+}
+.legend{display:inline-flex; align-items:center; gap:7px;}
+.swatch{width:20px; height:0; border-top-width:2.5px; border-top-style:solid; display:inline-block;}
+
+.stats{display:grid; grid-template-columns:repeat(auto-fit,minmax(112px,1fr)); gap:1px; background:var(--rule); border-radius:10px; overflow:hidden; border:1px solid var(--rule);}
+.stat{background:var(--surface); padding:11px 13px;}
+.stat dt{font-size:11.5px; letter-spacing:.08em; color:var(--ink-faint); margin:0 0 3px; font-weight:500;}
+.stat dd{
+  margin:0; font-family:"IBM Plex Mono",monospace; font-variant-numeric:tabular-nums;
+  font-size:16px; font-weight:500;
+}
+
+.card{padding:13px 15px 15px; border-left:3px solid var(--edge);}
+.card.k-A{--edge:var(--cA); --hue:var(--cA); --hue-soft:var(--cA-soft)}
+.card.k-B{--edge:var(--cB); --hue:var(--cB); --hue-soft:var(--cB-soft)}
+.card.k-C{--edge:var(--cC); --hue:var(--cC); --hue-soft:var(--cC-soft)}
+.card.k-D{--edge:var(--cD); --hue:var(--cD); --hue-soft:var(--cD-soft)}
+.card.active{background:var(--hue-soft);}
+.card-head{display:flex; align-items:baseline; gap:9px;}
+.sym{font-family:"STIX Two Text",serif; font-style:italic; font-weight:600; font-size:22px; color:var(--hue); line-height:1;}
+.role{font-weight:700; font-size:14.5px;}
+.val{
+  margin-left:auto; font-family:"IBM Plex Mono",monospace; font-variant-numeric:tabular-nums;
+  font-size:15px; font-weight:500; color:var(--hue);
+}
+.hint{margin:4px 0 9px; font-size:13px; color:var(--ink-soft); line-height:1.6;}
+.row{display:flex; align-items:center; gap:10px;}
+input[type=range]{
+  flex:1; -webkit-appearance:none; appearance:none; background:transparent; height:22px; margin:0; cursor:pointer;
+}
+input[type=range]::-webkit-slider-runnable-track{height:4px; border-radius:2px; background:var(--surface-2); border:1px solid var(--rule);}
+input[type=range]::-moz-range-track{height:4px; border-radius:2px; background:var(--surface-2); border:1px solid var(--rule);}
+input[type=range]::-webkit-slider-thumb{
+  -webkit-appearance:none; width:17px; height:17px; border-radius:50%;
+  background:var(--hue); border:2px solid var(--surface); margin-top:-6px;
+  box-shadow:0 0 0 1px var(--hue);
+}
+input[type=range]::-moz-range-thumb{
+  width:15px; height:15px; border-radius:50%; background:var(--hue);
+  border:2px solid var(--surface); box-shadow:0 0 0 1px var(--hue);
+}
+input[type=range]:focus-visible{outline:2px solid var(--hue); outline-offset:3px; border-radius:4px;}
+
+button{font:inherit; color:inherit; cursor:pointer;}
+.btn{
+  background:var(--surface); border:1px solid var(--rule); border-radius:6px;
+  padding:5px 11px; font-size:12.5px; line-height:1.5; transition:background-color .15s, border-color .15s;
+}
+.btn:hover{background:var(--surface-2); border-color:var(--grid-strong);}
+.btn:focus-visible{outline:2px solid var(--curve); outline-offset:2px;}
+.btn.mini{padding:3px 9px; font-size:12px;}
+.btn.tone{border-color:var(--hue); color:var(--hue);}
+.btn[aria-pressed="true"]{background:var(--ink); color:var(--surface); border-color:var(--ink);}
+.btn-grid{display:flex; flex-wrap:wrap; gap:7px;}
+
+.sec{padding:15px 17px 17px;}
+.sec h2{
+  font-family:"Noto Serif TC",serif; font-size:15.5px; font-weight:700;
+  margin:0 0 9px; letter-spacing:.02em;
+}
+.sec p{margin:0 0 9px; font-size:13.6px; color:var(--ink-soft); line-height:1.75;}
+.sec p:last-child{margin-bottom:0}
+.sec strong{color:var(--ink); font-weight:700;}
+code,.mono{font-family:"IBM Plex Mono",monospace; font-size:.92em;}
+.m{font-family:"STIX Two Text",serif; font-style:italic; font-size:1.06em;}
+.m .u{font-style:normal;}
+
+.notes{display:grid; grid-template-columns:repeat(auto-fit,minmax(290px,1fr)); gap:18px; margin-top:26px;}
+.derive{
+  background:var(--surface-2); border-radius:8px; padding:11px 13px; margin:10px 0;
+  font-family:"STIX Two Text",serif; font-size:16px; line-height:2;
+}
+.derive .step{display:block; color:var(--ink);}
+.derive .why{font-family:"Noto Sans TC",sans-serif; font-style:normal; font-size:12.5px; color:var(--ink-faint); margin-left:8px;}
+
+.bar{height:6px; border-radius:3px; background:var(--surface-2); border:1px solid var(--rule); overflow:hidden; margin:8px 0 6px;}
+.bar > i{display:block; height:100%; background:var(--curve); transition:width .2s ease, background-color .2s ease;}
+.bar.hit > i{background:var(--cC);}
+.verdict{font-size:13px; color:var(--ink-soft); min-height:1.6em;}
+.verdict.hit{color:var(--cC); font-weight:700;}
+
+@media (prefers-reduced-motion: reduce){ *{animation:none !important; transition:none !important;} }
+</style>
+
+<div class="wrap">
+<header>
+  <p class="eyebrow">高中數學 · 三角函數</p>
+  <h1>正弦曲線變形實驗室</h1>
+  <p class="lede">四個參數，四種變形。拉動滑桿，看 <span class="m">y = A<span class="u">sin</span>(B(x − C)) + D</span> 的圖形怎麼被拉高、壓扁、左右推移、上下抬起 —— 每個參數都會在圖上畫出它自己的幾何意義。</p>
+</header>
+
+<div class="stage">
+  <div class="left-col">
+    <div class="panel eq-panel">
+      <p class="eq">
+        <i>y</i> =
+        <span class="tok tA" data-k="A"><i>A</i></span>
+        <span style="font-style:normal">sin</span>(<span class="tok tB" data-k="B"><i>B</i></span>(<i>x</i> −
+        <span class="tok tC" data-k="C"><i>C</i></span>)) +
+        <span class="tok tD" data-k="D"><i>D</i></span>
+      </p>
+      <p class="pv" id="eqNum"></p>
+    </div>
+
+    <div class="panel graph-panel">
+      <svg id="plot" role="img" aria-label="正弦函數圖形"></svg>
+      <div class="plot-foot">
+        <span class="legend"><span class="swatch" style="border-color:var(--curve)"></span>你的曲線</span>
+        <span class="legend" id="legRef"><span class="swatch" style="border-color:var(--ref); border-top-style:dashed"></span><span class="m">y = <span class="u">sin</span> x</span>（原型）</span>
+        <span class="legend" id="legTarget" hidden><span class="swatch" style="border-color:var(--ink); border-top-style:dashed"></span>目標曲線</span>
+        <span style="margin-left:auto; color:var(--ink-faint)">橫軸以 π 為單位</span>
+      </div>
+    </div>
+
+    <dl class="stats" id="stats"></dl>
+  </div>
+
+  <div class="right-col">
+    <div class="panel card k-A" data-card="A">
+      <div class="card-head"><span class="sym">A</span><span class="role">振幅（上下拉伸）</span><span class="val" id="valA"></span></div>
+      <p class="hint">把圖形<strong>垂直</strong>放大 |A| 倍。A 為負時整條曲線沿中線翻轉。</p>
+      <div class="row">
+        <input type="range" id="rA" min="-3" max="3" step="0.1" value="1" aria-label="參數 A 振幅">
+        <button class="btn mini tone" data-anim="A">播放</button>
+      </div>
+    </div>
+
+    <div class="panel card k-B" data-card="B">
+      <div class="card-head"><span class="sym">B</span><span class="role">週期（左右壓縮）</span><span class="val" id="valB"></span></div>
+      <p class="hint">把圖形<strong>水平</strong>壓縮成 1/B 倍，週期變成 <span class="m">2π / |B|</span>。B 越大，波越密。</p>
+      <div class="row">
+        <input type="range" id="rB" min="0.25" max="4" step="0.05" value="1" aria-label="參數 B 角頻率">
+        <button class="btn mini tone" data-anim="B">播放</button>
+      </div>
+    </div>
+
+    <div class="panel card k-C" data-card="C">
+      <div class="card-head"><span class="sym">C</span><span class="role">相位（左右平移）</span><span class="val" id="valC"></span></div>
+      <p class="hint">整條曲線<strong>向右</strong>移動 C（C 為負則向左）。注意是 <span class="m">x − C</span>，不是 <span class="m">x + C</span>。</p>
+      <div class="row">
+        <input type="range" id="rC" min="-12" max="12" step="1" value="0" aria-label="參數 C 水平平移">
+        <button class="btn mini tone" data-anim="C">播放</button>
+      </div>
+    </div>
+
+    <div class="panel card k-D" data-card="D">
+      <div class="card-head"><span class="sym">D</span><span class="role">中線（上下平移）</span><span class="val" id="valD"></span></div>
+      <p class="hint">整條曲線<strong>向上</strong>移動 D，波動的中線從 <span class="m">y = 0</span> 變成 <span class="m">y = D</span>。</p>
+      <div class="row">
+        <input type="range" id="rD" min="-3" max="3" step="0.1" value="0" aria-label="參數 D 垂直平移">
+        <button class="btn mini tone" data-anim="D">播放</button>
+      </div>
+    </div>
+
+    <div class="panel sec">
+      <h2>教學路徑 · 一次只動一個</h2>
+      <div class="btn-grid" id="presets"></div>
+      <div class="btn-grid" style="margin-top:10px; padding-top:10px; border-top:1px solid var(--rule)">
+        <button class="btn" id="tgAll" aria-pressed="false">顯示全部標註</button>
+        <button class="btn" id="tgRef" aria-pressed="true">顯示原型曲線</button>
+      </div>
+    </div>
+
+    <div class="panel sec">
+      <h2>對照練習</h2>
+      <p id="pracIntro">出一條隱藏參數的曲線，用四個滑桿把你的曲線疊上去。</p>
+      <div id="pracLive" hidden>
+        <div class="bar" id="pracBar"><i style="width:0%"></i></div>
+        <p class="verdict" id="pracVerdict"></p>
+      </div>
+      <div class="btn-grid" style="margin-top:8px">
+        <button class="btn" id="pracNew">出一題</button>
+        <button class="btn" id="pracShow" hidden>看答案</button>
+        <button class="btn" id="pracEnd" hidden>結束練習</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="notes">
+  <div class="panel sec">
+    <h2>陷阱：<span class="m"><span class="u">sin</span>(2x − π/3)</span> 到底平移了多少？</h2>
+    <p>多數人會直接說「右移 <span class="m">π/3</span>」。錯了。平移量要看 <strong>x 本身</strong>移動多少，所以必須先把 B 提出來：</p>
+    <div class="derive">
+      <span class="step"><span class="u">sin</span>(2x − π/3)</span>
+      <span class="step">= <span class="u">sin</span>(2(x − π/6)) <span class="why">← 提出 B = 2</span></span>
+    </div>
+    <p>真正的平移是 <strong><span class="m">π/6</span></strong>，剛好是 <span class="m">π/3</span> 的一半 —— 因為橫軸已經先被壓縮成 1/2 了。這就是本頁把式子寫成 <span class="m">B(x − C)</span> 而不是 <span class="m">Bx − C</span> 的理由：<em>寫成這個形式，C 才直接等於平移量</em>。</p>
+    <p><button class="btn" id="trapDemo">在圖上驗證這件事</button></p>
+  </div>
+
+  <div class="panel sec">
+    <h2>順序：先伸縮，再平移</h2>
+    <p>從 <span class="m">y = <span class="u">sin</span> x</span> 走到 <span class="m">y = A<span class="u">sin</span>(B(x − C)) + D</span>，是四個動作依序發生：</p>
+    <div class="derive" style="font-size:15px">
+      <span class="step"><span style="color:var(--cB)">①</span> 橫向壓縮 1/B 倍 <span class="why">週期 2π → 2π/B</span></span>
+      <span class="step"><span style="color:var(--cA)">②</span> 縱向拉伸 A 倍 <span class="why">高度 1 → |A|</span></span>
+      <span class="step"><span style="color:var(--cC)">③</span> 向右平移 C <span class="why">整條曲線水平搬家</span></span>
+      <span class="step"><span style="color:var(--cD)">④</span> 向上平移 D <span class="why">中線 y = 0 → y = D</span></span>
+    </div>
+    <p>①② 之間、③④ 之間可以互換，但<strong>伸縮一定要在平移之前</strong>做完。先平移再壓縮的話，平移量本身也會被壓縮 —— 那正是上一則陷阱的來源。</p>
+    <p style="color:var(--ink-faint)">補充：<span class="m">|A|</span> 是振幅，<span class="m">D</span> 是中線，所以值域必定是 <span class="m">[D − |A|, D + |A|]</span>。這條式子可以直接背，但看一次圖就不用背了。</p>
+  </div>
+</div>
+</div>
+
+<script>
+(function(){
+"use strict";
+var PI = Math.PI;
+var reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+var state = { A:1, B:1, kC:0, D:0, focus:null, showAll:false, showRef:true, target:null };
+function C(){ return state.kC * PI / 12; }
+function f(x){ return state.A * Math.sin(state.B * (x - C())) + state.D; }
+function g(t, x){ return t.A * Math.sin(t.B * (x - t.C)) + t.D; }
+
+function gcd(a,b){ while(b){ var t=a%b; a=b; b=t; } return a; }
+function piFrac(k){
+  if(k === 0) return "0";
+  var s = k < 0 ? "−" : "", n = Math.abs(k), d = 12, gg = gcd(n,d);
+  n /= gg; d /= gg;
+  var headTxt = (n === 1 ? "π" : n + "π");
+  return s + (d === 1 ? headTxt : headTxt + "/" + d);
+}
+function piFracAbs(k){ return piFrac(Math.abs(k)); }
+function num(v, p){ return v.toFixed(p === undefined ? 1 : p).replace("-", "−"); }
+function esc(s){ return String(s).replace(/&/g,"&amp;").replace(/</g,"&lt;"); }
+
+var svg = document.getElementById("plot");
+var SVGNS = "http://www.w3.org/2000/svg";
+var geom = null;
+
+function el(tag, attrs, text){
+  var n = document.createElementNS(SVGNS, tag), k;
+  for(k in attrs){ if(attrs[k] !== null && attrs[k] !== undefined) n.setAttribute(k, attrs[k]); }
+  if(text !== undefined) n.textContent = text;
+  return n;
+}
+function label(x, y, text, color, anchor, size){
+  return el("text", {
+    x:x, y:y, fill:color, "text-anchor":anchor || "middle",
+    "font-family":'"IBM Plex Mono","STIX Two Text",monospace',
+    "font-size":size || 12, stroke:"var(--surface)", "stroke-width":3.5,
+    "paint-order":"stroke", "stroke-linejoin":"round"
+  }, text);
+}
+
+function layout(){
+  var w = svg.parentNode.clientWidth - 20;
+  if(!(w > 0)) w = 700;
+  var h = Math.max(300, Math.min(500, Math.round(w * 0.60)));
+  var narrow = w < 520;
+  var padL = narrow ? 34 : 44, padR = 16, padT = 16, padB = narrow ? 28 : 32;
+  var xmin = -2*PI, xmax = 2*PI, ymin = -6.6, ymax = 6.6;
+  var pw = w - padL - padR, ph = h - padT - padB;
+  geom = {
+    w:w, h:h, narrow:narrow, padL:padL, padT:padT, pw:pw, ph:ph,
+    xmin:xmin, xmax:xmax, ymin:ymin, ymax:ymax,
+    X:function(x){ return padL + (x - xmin) / (xmax - xmin) * pw; },
+    Y:function(y){ return padT + (ymax - y) / (ymax - ymin) * ph; }
+  };
+  svg.setAttribute("viewBox", "0 0 " + w + " " + h);
+  svg.setAttribute("width", w);
+  svg.setAttribute("height", h);
+}
+
+function drawStatic(){
+  var G = geom, i, x, y, gs = el("g", {});
+
+  for(i = -8; i <= 8; i++){
+    x = i * PI / 4;
+    gs.appendChild(el("line", {
+      x1:G.X(x), y1:G.Y(G.ymin), x2:G.X(x), y2:G.Y(G.ymax),
+      stroke:(i % 2 === 0 ? "var(--grid-strong)" : "var(--grid)"), "stroke-width":1
+    }));
+  }
+  for(y = -6; y <= 6; y++){
+    gs.appendChild(el("line", {
+      x1:G.X(G.xmin), y1:G.Y(y), x2:G.X(G.xmax), y2:G.Y(y),
+      stroke:(y % 2 === 0 ? "var(--grid-strong)" : "var(--grid)"), "stroke-width":1
+    }));
+  }
+
+  gs.appendChild(el("line", { x1:G.X(G.xmin), y1:G.Y(0), x2:G.X(G.xmax), y2:G.Y(0), stroke:"var(--ink-soft)", "stroke-width":1.4 }));
+  gs.appendChild(el("line", { x1:G.X(0), y1:G.Y(G.ymin), x2:G.X(0), y2:G.Y(G.ymax), stroke:"var(--ink-soft)", "stroke-width":1.4 }));
+
+  for(i = -4; i <= 4; i++){
+    if(i === 0) continue;
+    if(G.narrow && (i % 2 !== 0)) continue;
+    x = i * PI / 2;
+    gs.appendChild(el("line", { x1:G.X(x), y1:G.Y(0) - 4, x2:G.X(x), y2:G.Y(0) + 4, stroke:"var(--ink-soft)", "stroke-width":1.4 }));
+    gs.appendChild(label(G.X(x), G.Y(0) + 17, piFrac(i * 6), "var(--ink-faint)", "middle", G.narrow ? 11 : 12));
+  }
+  for(y = -6; y <= 6; y += 2){
+    gs.appendChild(label(G.padL - 8, G.Y(y) + 4, y === 0 ? "0" : num(y, 0), "var(--ink-faint)", "end", G.narrow ? 11 : 12));
+  }
+  return gs;
+}
+
+function pathOf(fn){
+  var G = geom, N = 620, d = "", i, x, y, first = true;
+  for(i = 0; i <= N; i++){
+    x = G.xmin + (G.xmax - G.xmin) * i / N;
+    y = fn(x);
+    if(!isFinite(y) || y > G.ymax || y < G.ymin){ first = true; continue; }
+    d += (first ? "M" : "L") + G.X(x).toFixed(2) + " " + G.Y(y).toFixed(2);
+    first = false;
+  }
+  return d;
+}
+
+function arrowHead(g, x, y, dx, dy, color){
+  var L = Math.sqrt(dx*dx + dy*dy) || 1;
+  dx /= L; dy /= L;
+  var s = 6.5, ax = -dy, ay = dx;
+  var pts = [
+    x.toFixed(1) + "," + y.toFixed(1),
+    (x - dx*s + ax*s*0.45).toFixed(1) + "," + (y - dy*s + ay*s*0.45).toFixed(1),
+    (x - dx*s - ax*s*0.45).toFixed(1) + "," + (y - dy*s - ay*s*0.45).toFixed(1)
+  ].join(" ");
+  g.appendChild(el("polygon", { points:pts, fill:color }));
+}
+function arrow(g, x1, y1, x2, y2, color, both){
+  g.appendChild(el("line", { x1:x1, y1:y1, x2:x2, y2:y2, stroke:color, "stroke-width":1.6 }));
+  arrowHead(g, x2, y2, x2 - x1, y2 - y1, color);
+  if(both) arrowHead(g, x1, y1, x1 - x2, y1 - y2, color);
+}
+
+/* the peak nearest the middle of the view, or null when no peak is on screen */
+function visiblePeak(base, T){
+  var G = geom, k, x, d, best = null, bestD = Infinity;
+  var kmin = Math.floor((G.xmin - base) / T) - 1, kmax = Math.ceil((G.xmax - base) / T) + 1;
+  for(k = kmin; k <= kmax; k++){
+    x = base + k * T;
+    if(x < G.xmin + 0.55 || x > G.xmax - 0.55) continue;
+    d = Math.abs(x);
+    if(d < bestD){ bestD = d; best = x; }
+  }
+  return best;
+}
+/* the single cycle with the largest on-screen overlap, clamped to the view */
+function visibleCycle(c, T){
+  var G = geom, k, a, b, ov, mid, best = null, bestOv = -Infinity, bestMid = Infinity;
+  var kmin = Math.floor((G.xmin - c) / T) - 1, kmax = Math.ceil((G.xmax - c) / T) + 1;
+  for(k = kmin; k <= kmax; k++){
+    a = c + k * T; b = a + T;
+    ov = Math.min(b, G.xmax) - Math.max(a, G.xmin);
+    mid = Math.abs((a + b) / 2);
+    /* 重疊最多者優先；並列時取最靠近畫面中央的那一個週期 */
+    if(ov > bestOv + 1e-9 || (Math.abs(ov - bestOv) < 1e-9 && mid < bestMid)){
+      bestOv = ov; bestMid = mid; best = [a, b];
+    }
+  }
+  var x0 = best[0], x1 = best[1], cutL = false, cutR = false;
+  if(x0 < G.xmin + 0.3){ x0 = G.xmin + 0.3; cutL = true; }
+  if(x1 > G.xmax - 0.3){ x1 = G.xmax - 0.3; cutR = true; }
+  return { x0:x0, x1:x1, cutL:cutL, cutR:cutR };
+}
+/* nudge annotation labels so they never overlap each other or leave the frame */
+function placeLabels(group){
+  var G = geom, texts = group.querySelectorAll("text"), placed = [], i, j, t, box, dy, sign, tries, ok, x;
+  for(i = 0; i < texts.length; i++){
+    t = texts[i];
+    box = t.getBBox();
+    x = parseFloat(t.getAttribute("x"));
+    if(box.x < 2){ t.setAttribute("x", x + (2 - box.x)); box = t.getBBox(); }
+    if(box.x + box.width > G.w - 2){ t.setAttribute("x", parseFloat(t.getAttribute("x")) - (box.x + box.width - (G.w - 2))); box = t.getBBox(); }
+    dy = 0; sign = -1; tries = 0;
+    while(tries < 14){
+      ok = true;
+      for(j = 0; j < placed.length; j++){
+        if(box.x < placed[j].x + placed[j].width && placed[j].x < box.x + box.width &&
+           box.y < placed[j].y + placed[j].height && placed[j].y < box.y + box.height){ ok = false; break; }
+      }
+      if(ok && box.y > 2 && box.y + box.height < G.h - 2) break;
+      tries++;
+      dy = sign * Math.ceil(tries / 2) * 15;
+      sign = -sign;
+      t.setAttribute("y", parseFloat(t.getAttribute("y")) - (t._dy || 0) + dy);
+      t._dy = dy;
+      box = t.getBBox();
+    }
+    placed.push({ x:box.x, y:box.y, width:box.width, height:box.height });
+  }
+}
+
+function drawAnnotations(){
+  var G = geom, g = el("g", {});
+  if(state.target) return g;
+  var keys = state.showAll ? ["D","A","B","C"] : (state.focus ? [state.focus] : []);
+  var T = 2 * PI / Math.abs(state.B), c = C(), i, k;
+
+  for(i = 0; i < keys.length; i++){
+    k = keys[i];
+    if(k === "D"){
+      g.appendChild(el("line", {
+        x1:G.X(G.xmin), y1:G.Y(state.D), x2:G.X(G.xmax), y2:G.Y(state.D),
+        stroke:"var(--cD)", "stroke-width":1.6, "stroke-dasharray":"7 4"
+      }));
+      if(Math.abs(state.D) > 0.05){
+        arrow(g, G.X(G.xmax - 0.9), G.Y(0), G.X(G.xmax - 0.9), G.Y(state.D), "var(--cD)");
+      }
+      g.appendChild(label(G.X(G.xmin) + 6, G.Y(state.D) - 8, "中線 y = " + num(state.D), "var(--cD)", "start", 12.5));
+    }
+    if(k === "A"){
+      var absA = Math.abs(state.A);
+      var sgn = state.A >= 0 ? 1 : -1;
+      var xp = visiblePeak(c + sgn * PI / (2 * state.B), T);
+      if(xp === null) xp = G.xmin + 0.7;               /* 週期比畫面寬時，仍在左緣量出 |A| */
+      if(absA > 0.05){
+        g.appendChild(el("line", {
+          x1:G.X(G.xmin), y1:G.Y(state.D + absA), x2:G.X(G.xmax), y2:G.Y(state.D + absA),
+          stroke:"var(--cA)", "stroke-width":1, "stroke-dasharray":"3 4", opacity:"0.55"
+        }));
+      }
+      arrow(g, G.X(xp), G.Y(state.D), G.X(xp), G.Y(state.D + absA), "var(--cA)", true);
+      g.appendChild(label(G.X(xp) + 9, G.Y(state.D + absA) - 8,
+        "振幅 " + num(absA), "var(--cA)", "start", 12.5));
+    }
+    if(k === "B"){
+      var cyc = visibleCycle(c, T), x0 = cyc.x0, x1 = cyc.x1;
+      var yb = state.D - 0.6, py = G.Y(yb);
+      g.appendChild(el("line", {
+        x1:G.X(x0), y1:py, x2:G.X(x1), y2:py, stroke:"var(--cB)", "stroke-width":1.6,
+        "stroke-dasharray": (cyc.cutL || cyc.cutR) ? "6 3" : null
+      }));
+      /* 只在沒被畫面切掉的那一端畫箭頭，讓「還沒走完一個週期」看得出來 */
+      if(!cyc.cutR) arrowHead(g, G.X(x1), py, 1, 0, "var(--cB)");
+      if(!cyc.cutL) arrowHead(g, G.X(x0), py, -1, 0, "var(--cB)");
+      if(!cyc.cutL) g.appendChild(el("line", { x1:G.X(x0), y1:G.Y(yb - 0.3), x2:G.X(x0), y2:G.Y(state.D), stroke:"var(--cB)", "stroke-width":1, "stroke-dasharray":"3 3" }));
+      if(!cyc.cutR) g.appendChild(el("line", { x1:G.X(x1), y1:G.Y(yb - 0.3), x2:G.X(x1), y2:G.Y(state.D), stroke:"var(--cB)", "stroke-width":1, "stroke-dasharray":"3 3" }));
+      g.appendChild(label(G.X((x0 + x1) / 2), py - 10,
+        "週期 " + (2 / Math.abs(state.B)).toFixed(2) + "π" + ((cyc.cutL || cyc.cutR) ? "（延伸出畫面）" : ""),
+        "var(--cB)", "middle", 12.5));
+    }
+    if(k === "C"){
+      var yc = state.D + 0.5;
+      if(state.kC === 0){
+        g.appendChild(label(G.X(0) + 9, G.Y(yc) - 4, "未平移（C = 0）", "var(--cC)", "start", 12.5));
+      } else {
+        arrow(g, G.X(0), G.Y(yc), G.X(c), G.Y(yc), "var(--cC)");
+        g.appendChild(el("line", { x1:G.X(0), y1:G.Y(yc + 0.35), x2:G.X(0), y2:G.Y(yc - 0.35), stroke:"var(--cC)", "stroke-width":1 }));
+        g.appendChild(label(G.X(c / 2), G.Y(yc) - 10,
+          (state.kC > 0 ? "右移 " : "左移 ") + piFracAbs(state.kC), "var(--cC)", "middle", 12.5));
+      }
+    }
+  }
+  return g;
+}
+
+var layerStatic = null;
+function render(){
+  while(svg.firstChild) svg.removeChild(svg.firstChild);
+  svg.appendChild(layerStatic);
+
+  if(state.showRef && !state.target){
+    svg.appendChild(el("path", {
+      d:pathOf(function(x){ return Math.sin(x); }),
+      fill:"none", stroke:"var(--ref)", "stroke-width":2, "stroke-dasharray":"5 5", "stroke-linecap":"round"
+    }));
+  }
+  if(state.target){
+    svg.appendChild(el("path", {
+      d:pathOf(function(x){ return g(state.target, x); }),
+      fill:"none", stroke:"var(--ink)", "stroke-width":2.4, "stroke-dasharray":"9 5", "stroke-linecap":"round", opacity:"0.8"
+    }));
+  }
+  var ann = drawAnnotations();
+  svg.appendChild(ann);
+  placeLabels(ann);
+  svg.appendChild(el("path", {
+    d:pathOf(f), fill:"none", stroke:"var(--curve)", "stroke-width":3, "stroke-linecap":"round", "stroke-linejoin":"round"
+  }));
+}
+
+var statsEl = document.getElementById("stats");
+function syncText(){
+  var A = state.A, B = state.B, D = state.D, absA = Math.abs(A);
+  document.getElementById("valA").textContent = num(A);
+  document.getElementById("valB").textContent = num(B, 2);
+  document.getElementById("valC").textContent = piFrac(state.kC);
+  document.getElementById("valD").textContent = num(D);
+
+  var cs = state.kC === 0 ? "" : (state.kC > 0 ? " − " + piFracAbs(state.kC) : " + " + piFracAbs(state.kC));
+  document.getElementById("eqNum").innerHTML =
+    "y = <span class='vA'>" + esc(num(A)) + "</span> sin( <span class='vB'>" + esc(num(B, 2)) +
+    "</span>( x<span class='vC'>" + esc(cs) + "</span> ) )" +
+    (D === 0 ? "" : (D > 0 ? " + <span class='vD'>" + esc(num(D)) + "</span>"
+                           : " − <span class='vD'>" + esc(num(Math.abs(D))) + "</span>"));
+
+  var items = [
+    ["振幅 |A|", num(absA)],
+    ["週期 T", (2 / Math.abs(B)).toFixed(2) + "π"],
+    ["水平平移", piFrac(state.kC)],
+    ["中線", "y = " + num(D)],
+    ["值域", "[" + num(D - absA) + ", " + num(D + absA) + "]"]
+  ];
+  var html = "", i;
+  for(i = 0; i < items.length; i++){
+    html += "<div class='stat'><dt>" + items[i][0] + "</dt><dd>" + esc(items[i][1]) + "</dd></div>";
+  }
+  statsEl.innerHTML = html;
+
+  var cards = document.querySelectorAll("[data-card]");
+  for(i = 0; i < cards.length; i++){
+    cards[i].classList.toggle("active", !state.showAll && cards[i].getAttribute("data-card") === state.focus);
+  }
+  var toks = document.querySelectorAll(".tok");
+  for(i = 0; i < toks.length; i++){
+    toks[i].classList.toggle("on", state.showAll || toks[i].getAttribute("data-k") === state.focus);
+  }
+  if(state.target) checkMatch();
+}
+
+function update(){ syncText(); render(); }
+
+var inputs = { A:document.getElementById("rA"), B:document.getElementById("rB"), C:document.getElementById("rC"), D:document.getElementById("rD") };
+function bind(k){
+  inputs[k].addEventListener("input", function(){
+    var v = parseFloat(inputs[k].value);
+    if(k === "C") state.kC = Math.round(v); else state[k] = v;
+    state.focus = k; update();
+  });
+  inputs[k].addEventListener("focus", function(){ state.focus = k; update(); });
+}
+["A","B","C","D"].forEach(bind);
+
+Array.prototype.forEach.call(document.querySelectorAll("[data-card]"), function(card){
+  card.addEventListener("mouseenter", function(){ state.focus = card.getAttribute("data-card"); update(); });
+});
+Array.prototype.forEach.call(document.querySelectorAll(".tok"), function(t){
+  t.addEventListener("mouseenter", function(){ state.focus = t.getAttribute("data-k"); update(); });
+});
+
+function apply(s){
+  state.A = s.A; state.B = s.B; state.kC = s.kC; state.D = s.D;
+  inputs.A.value = state.A; inputs.B.value = state.B;
+  inputs.C.value = state.kC; inputs.D.value = state.D;
+  update();
+}
+function setParams(p, animate){
+  var from = { A:state.A, B:state.B, kC:state.kC, D:state.D };
+  var to = {
+    A: p.A !== undefined ? p.A : state.A, B: p.B !== undefined ? p.B : state.B,
+    kC: p.kC !== undefined ? p.kC : state.kC, D: p.D !== undefined ? p.D : state.D
+  };
+  if(!animate || reduce){ apply(to); return; }
+  var t0 = performance.now(), dur = 520;
+  requestAnimationFrame(function step(now){
+    var u = Math.min(1, (now - t0) / dur);
+    var e = u < 0.5 ? 2*u*u : 1 - Math.pow(-2*u + 2, 2) / 2;
+    apply({
+      A: Math.round((from.A + (to.A - from.A) * e) * 10) / 10,
+      B: Math.round((from.B + (to.B - from.B) * e) * 100) / 100,
+      kC: Math.round(from.kC + (to.kC - from.kC) * e),
+      D: Math.round((from.D + (to.D - from.D) * e) * 10) / 10
+    });
+    if(u < 1) requestAnimationFrame(step);
+  });
+}
+
+var sweeping = null;
+Array.prototype.forEach.call(document.querySelectorAll("[data-anim]"), function(btn){
+  btn.addEventListener("click", function(){
+    var k = btn.getAttribute("data-anim");
+    state.focus = k;
+    if(sweeping){
+      cancelAnimationFrame(sweeping.raf);
+      sweeping.btn.textContent = "播放";
+      var was = sweeping.k; sweeping = null;
+      if(was === k){ update(); return; }
+    }
+    var ranges = { A:[-3, 3, 1], B:[0.25, 4, 1], C:[-12, 12, 0], D:[-3, 3, 0] };
+    var r = ranges[k], lo = r[0], hi = r[1], home = r[2];
+    if(reduce){
+      var one = {}; if(k === "C") one.kC = 6; else one[k] = hi * 0.7;
+      setParams(one, false); return;
+    }
+    btn.textContent = "停止";
+    var t0 = performance.now(), dur = 3600;
+    sweeping = { btn:btn, k:k, raf:0 };
+    sweeping.raf = requestAnimationFrame(function frame(now){
+      if(!sweeping) return;
+      var u = (now - t0) / dur;
+      var v = lo + (hi - lo) * (0.5 - 0.5 * Math.cos(2 * PI * u));
+      if(k === "C"){ state.kC = Math.round(v); inputs.C.value = state.kC; }
+      else { state[k] = Math.round(v * 100) / 100; inputs[k].value = state[k]; }
+      update();
+      if(u >= 1){
+        btn.textContent = "播放"; sweeping = null;
+        var back = {}; if(k === "C") back.kC = home; else back[k] = home;
+        setParams(back, true);
+        return;
+      }
+      sweeping.raf = requestAnimationFrame(frame);
+    });
+  });
+});
+
+var PRESETS = [
+  { t:"還原 y = sin x", p:{ A:1, B:1, kC:0, D:0 } },
+  { t:"只改 A = 2", p:{ A:2, B:1, kC:0, D:0 }, f:"A" },
+  { t:"A = −1（翻轉）", p:{ A:-1, B:1, kC:0, D:0 }, f:"A" },
+  { t:"只改 B = 2", p:{ A:1, B:2, kC:0, D:0 }, f:"B" },
+  { t:"B = 0.5（拉長）", p:{ A:1, B:0.5, kC:0, D:0 }, f:"B" },
+  { t:"只改 C = π/4", p:{ A:1, B:1, kC:3, D:0 }, f:"C" },
+  { t:"只改 D = 1", p:{ A:1, B:1, kC:0, D:1 }, f:"D" },
+  { t:"綜合 2sin(2(x−π/4))+1", p:{ A:2, B:2, kC:3, D:1 } }
+];
+var pbox = document.getElementById("presets");
+PRESETS.forEach(function(pr){
+  var b = document.createElement("button");
+  b.className = "btn"; b.textContent = pr.t;
+  b.addEventListener("click", function(){ if(pr.f) state.focus = pr.f; setParams(pr.p, true); });
+  pbox.appendChild(b);
+});
+
+var tgAll = document.getElementById("tgAll"), tgRef = document.getElementById("tgRef");
+tgAll.addEventListener("click", function(){
+  state.showAll = !state.showAll;
+  tgAll.setAttribute("aria-pressed", String(state.showAll));
+  update();
+});
+tgRef.addEventListener("click", function(){
+  state.showRef = !state.showRef;
+  tgRef.setAttribute("aria-pressed", String(state.showRef));
+  if(!state.target) document.getElementById("legRef").hidden = !state.showRef;
+  update();
+});
+
+document.getElementById("trapDemo").addEventListener("click", function(){
+  state.focus = "C"; state.showAll = false;
+  tgAll.setAttribute("aria-pressed", "false");
+  setParams({ A:1, B:2, kC:2, D:0 }, true);
+  svg.scrollIntoView({ behavior: reduce ? "auto" : "smooth", block:"center" });
+});
+
+var pracLive = document.getElementById("pracLive"), pracBar = document.getElementById("pracBar"),
+    pracVerdict = document.getElementById("pracVerdict"), pracIntro = document.getElementById("pracIntro"),
+    btnNew = document.getElementById("pracNew"), btnShow = document.getElementById("pracShow"),
+    btnEnd = document.getElementById("pracEnd");
+
+function checkMatch(){
+  var t = state.target, N = 240, i, x, err = 0;
+  for(i = 0; i <= N; i++){
+    x = -2*PI + 4*PI*i/N;
+    err = Math.max(err, Math.abs(f(x) - g(t, x)));
+  }
+  var hit = err < 0.15;
+  var pct = Math.max(0, Math.min(100, (1 - err / 4) * 100));
+  pracBar.firstElementChild.style.width = pct.toFixed(1) + "%";
+  pracBar.classList.toggle("hit", hit);
+  pracVerdict.classList.toggle("hit", hit);
+  pracVerdict.textContent = hit
+    ? "吻合！兩條曲線疊起來了。"
+    : "最大落差 " + err.toFixed(2) + " —— 先對中線與振幅，再調週期，最後推平移。";
+}
+function newProblem(){
+  var As = [1, 1.5, 2, 2.5, -1, -2], Bs = [0.5, 1, 2, 3], Cs = [-6, -4, -3, 0, 3, 4, 6], Ds = [-2, -1, 0, 1, 2];
+  function pick(a){ return a[Math.floor(Math.random() * a.length)]; }
+  var kc = pick(Cs);
+  state.target = { A:pick(As), B:pick(Bs), kC:kc, C:kc * PI / 12, D:pick(Ds) };
+  state.showAll = false; tgAll.setAttribute("aria-pressed", "false");
+  document.getElementById("legTarget").hidden = false;
+  document.getElementById("legRef").hidden = true;
+  pracLive.hidden = false; btnShow.hidden = false; btnEnd.hidden = false;
+  btnNew.textContent = "換一題";
+  pracIntro.textContent = "黑色虛線是目標。同一條曲線可能有多組參數，所以只比圖形：最大落差小於 0.15 就算對。";
+  apply({ A:1, B:1, kC:0, D:0 });
+}
+btnNew.addEventListener("click", newProblem);
+btnShow.addEventListener("click", function(){
+  var t = state.target;
+  if(t) setParams({ A:t.A, B:t.B, kC:t.kC, D:t.D }, true);
+});
+btnEnd.addEventListener("click", function(){
+  state.target = null;
+  document.getElementById("legTarget").hidden = true;
+  document.getElementById("legRef").hidden = !state.showRef;
+  pracLive.hidden = true; btnShow.hidden = true; btnEnd.hidden = true;
+  btnNew.textContent = "出一題";
+  pracIntro.textContent = "出一條隱藏參數的曲線，用四個滑桿把你的曲線疊上去。";
+  update();
+});
+
+function rebuild(){ layout(); layerStatic = drawStatic(); update(); }
+rebuild();
+if(window.ResizeObserver){
+  new ResizeObserver(function(){
+    var w = svg.parentNode.clientWidth - 20;
+    if(!geom || Math.abs(w - geom.w) > 2) rebuild();
+  }).observe(svg.parentNode);
+} else {
+  window.addEventListener("resize", rebuild);
+}
+if(document.fonts && document.fonts.ready) document.fonts.ready.then(rebuild);
+})();
+</script>
